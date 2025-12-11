@@ -4,45 +4,31 @@ import requests, argparse
 API_BASE = "http://127.0.0.1:8000"
 
 def submit(api_key, command):
-    r = requests.post(f"{API_BASE}/commands/", json={"command_text": command}, headers={"x-api-key": api_key})
+    # send as form data, with cookie for authentication
+    r = requests.post(
+        f"{API_BASE}/submit_command/",
+        data={"command": command},
+        cookies={"api_key": api_key},
+        allow_redirects=False
+    )
     print("Status Code:", r.status_code)
-    try:
-        print("Response:", r.json())
-    except:
-        print("Response Text:", r.text)
-
-def credits(api_key):
-    r = requests.get(f"{API_BASE}/credits/", headers={"x-api-key": api_key})
-    print("Status Code:", r.status_code)
-    try:
-        print("Response:", r.json())
-    except:
-        print("Response Text:", r.text)
-
-def history(api_key):
-    r = requests.get(f"{API_BASE}/history/", headers={"x-api-key": api_key})
-    print("Status Code:", r.status_code)
-    try:
-        print("Response:", r.json())
-    except:
-        print("Response Text:", r.text)
+    if r.status_code == 302:
+        print("Command submitted successfully!")
+    else:
+        print("Response:", r.text)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--key", required=True)
+    parser.add_argument("--key", required=True, help="Your API key")
     sub = parser.add_subparsers(dest="cmd")
+
     s1 = sub.add_parser("submit")
-    s1.add_argument("command")
-    sub.add_parser("credits")
-    sub.add_parser("history")
+    s1.add_argument("command", help="Command to execute")
+
     args = parser.parse_args()
 
     if args.cmd == "submit":
         submit(args.key, args.command)
-    elif args.cmd == "credits":
-        credits(args.key)
-    elif args.cmd == "history":
-        history(args.key)
     else:
         parser.print_help()
 
